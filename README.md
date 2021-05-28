@@ -6,29 +6,9 @@ ROS node for safe drone landing site detection and waypoint generation.
 The *safe_landing_planner* classifies the terrain underneath the vehicle based on the mean and standard deviation of the z coordinate of pointcloud points. The pointcloud from a downwards facing sensor is binned into a 2D grid based on the xy point coordinates. For each bin, the mean and standard deviation of z coordinate of the points are calculated and they are used to locate flat areas where it is safe to land.
 
 
-
-# Table of Contents
-- [Getting Started](#getting-started)
-  - [Installation](#installation)
-    - [Installation for Ubuntu](#installation)
-  - [Run the Avoidance Gazebo Simulation](#run-the-avoidance-gazebosimulation)
-    - [Safe Landing Planner](#safe-landing-planner)
-  - [Run on Hardware](#run-on-hardware)
-    - [Prerequisite](#prerequisite)
-    - [Local Planner](#local-planner)
-    - [Global Planner](#global-planner)
-- [Troubleshooting](#troubleshooting)
-- [Advanced](#advanced)
-  - [Message Flows](#message-flow)
-    - [PX4 and local planner](#px4-and-local-planner)
-    - [PX4 and global planner](#px4-and-global-planner)
-- [Contributing](#contributing)
-
 # Getting Started
 
 ## Installation
-
-### Prerequisite
 
 1. Ubuntu 18.04 (Bionic Beaver) 
 
@@ -44,7 +24,7 @@ The *safe_landing_planner* classifies the terrain underneath the vehicle based o
    source ~/catkin_ws/devel/setup.bash
    ```
    
-1. PX4 source code (https://github.com/PX4/PX4-Autopilot)
+1. PX4 Firmware (https://github.com/PX4/PX4-Autopilot)
 
 ## Run the Avoidance Gazebo Simulation
 
@@ -89,7 +69,6 @@ To run the node:
 roslaunch safe_landing_planner safe_landing_planner.launch
 ```
 
-
 You will see an unarmed vehicle on the ground. Open [QGroundControl](http://qgroundcontrol.com/), either plan a mission with the last item of type *Land* or fly around the world in Position Control, click the *Land* button on the left side where you wish to land.
 At the land position, the vehicle will start to descend towards the ground until it is at `loiter_height` from the ground/obstacle. Then it will start loitering to evaluate the ground underneeth.
 If the ground is flat, the vehicle will continue landing. Otherwise it will evaluate the close by terrain in a squared spiral pattern until it finds a good enough ground to land on.
@@ -122,65 +101,13 @@ Parameters to set through QGC:
 * Other Required Components for Intel Realsense:
   - Librealsense (Realsense SDK). The installation instructions can be found [here](https://github.com/IntelRealSense/librealsense/blob/master/doc/installation.md)
   - [Librealsense ROS wrappers](https://github.com/intel-ros/realsense.git)
-* Other Required Components for Occipital Structure Core:
-  - Download the [Structure SDK](https://structure.io/developers). The version tested with this package is `0.7.1`. Create the `build` directory and build the SDK
-  ```bash
-  mkdir build
-  cd build
-  cmake ..
-  make
-  ```
-  - Clone the [ROS wrapper](https://github.com/Auterion/struct_core_ros) in the `catkin_ws`
-  - Copy the shared object `Libraries/Structure/Linux/x86_64/libStructure.so` from the SDK into `/usr/local/lib/`
-  - Copy the headers from `Libraries/Structure/Headers/` in the SDK to the ROS wrapper include directory `~/catkin_ws/src/struct_core_ros/include`
-
-Tested models:
-- local planner: Intel NUC, Jetson TX2, Intel Atom x7-Z8750 (built-in on Intel Aero RTF drone)
-- global planner: Odroid
 
 
 
-## Local Planner
-
-Once the catkin workspace has been built, to run the planner with a Realsense D435 or Occipital Structure Core camera you can generate the launch file using the script *generate_launchfile.sh*
-
-1. `export CAMERA_CONFIGS="camera_namespace, camera_type, serial_n, tf_x, tf_y, tf_z, tf_yaw, tf_pitch, tf_roll"` where  `camera_type` is either `realsense` or `struct_core_ros`, `tf_*` represents the displacement between the camera and the flight controller. If more than one camera is present, list the different camera configuration separated by a semicolon. Within each camera configuration the parameters are separated by commas.
-2. `export DEPTH_CAMERA_FRAME_RATE=frame_rate`. If this variable isn't set, the default frame rate will be taken.
-3. `export VEHICLE_CONFIG=/path/to/params.yaml` where the yaml file contains the value of some parameters different from the defaults set in the cfg file. If this variable isn't set, the default parameters values will be used.
-
-Changing the serial number and `DEPTH_CAMERA_FRAME_RATE` don't have any effect on the Structure Core.
-
-For example:
-```bash
-export CAMERA_CONFIGS="camera_main,realsense,819612070807,0.3,0.32,-0.11,0,0,0"
-export DEPTH_CAMERA_FRAME_RATE=30
-export VEHICLE_CONFIG=~/catkin_ws/src/avoidance/local_planner/cfg/params_vehicle_1.yaml
-./tools/generate_launchfile.sh
-roslaunch local_planner avoidance.launch fcu_url:=/dev/ttyACM0:57600
-```
-
-where `fcu_url` representing the port connecting the companion computer to the flight controller.
-The planner is running correctly if the rate of the processed point cloud is around 10-20 Hz. To check the rate run:
-
-```bash
-rostopic hz /local_pointcloud
-```
-
-If you would like to read debug statements on the console, please change `custom_rosconsole.conf` to
-```bash
-log4j.logger.ros.local_planner=DEBUG
-```
 
 ## Safe Landing Planner
 
-Once the catkin workspace has been built, to run the planner with a Realsense D435 and Occipital Structure Core, you can generate the launch file using the script *generate_launchfile.sh*. The script works the same as described in the section above for the Local Planner. For example:
-
-```bash
-export CAMERA_CONFIGS="camera_main,struct_core,819612070807,0.3,0.32,-0.11,0,0,0"
-export VEHICLE_CONFIG_SLP=~/catkin_ws/src/avoidance/safe_landing_planner/cfg/slpn_structure_core.yaml
-export VEHICLE_CONFIG_WPG=~/catkin_ws/src/avoidance/safe_landing_planner/cfg/wpgn_structure_core.yaml
-./safe_landing_planner/tools/generate_launchfile.sh
-roslaunch safe_landing_planner safe_landing_planner_launch.launch
+roslaunch safe_landing_planner safe_landing_planner_launch_real_sense.launch
 ```
 
 In the `cfg/` folder there are camera specific configurations for the algorithm nodes. These parameters can be loaded by specifying the file in the `VEHICLE_CONFIG_SLP` and `VEHICLE_CONFIG_WPG` system variable for the safe_landing_planner_node and for the waypoint_generator_node respectively.
