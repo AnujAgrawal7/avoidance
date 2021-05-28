@@ -63,6 +63,7 @@ The last three steps, together with sourcing your catkin **setup.bash** (`source
 
 This section shows how to start the *safe_landing_planner* and use it to land safely in mission or auto land mode.
 To run the node:
+
  Set the parameter `COM_OBS_AVOID` to 1 in QGroundControl.
 
 ```bash
@@ -106,7 +107,7 @@ Parameters to set through QGC:
 
 
 ## Safe Landing Planner
-
+```
 roslaunch safe_landing_planner safe_landing_planner_launch_real_sense.launch
 ```
 
