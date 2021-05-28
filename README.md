@@ -1,29 +1,11 @@
 # Obstacle Detection and Avoidance
-[![Release Status](https://img.shields.io/github/v/release/PX4/avoidance)](https://github.com/PX4/avoidance/releases)
-[![Build Status](https://travis-ci.org/PX4/avoidance.svg?branch=master)](https://travis-ci.org/PX4/avoidance)
-[![Coverage Status](https://coveralls.io/repos/github/PX4/avoidance/badge.svg)](https://coveralls.io/github/PX4/avoidance)
 
-PX4 computer vision algorithms packaged as ROS nodes for depth sensor fusion and obstacle avoidance.
-This repository contains three different implementations:
 
-  * *local_planner* is a local VFH+* based planner that plans (including some history) in a vector field histogram
-  * *global_planner* is a global, graph based planner that plans in a traditional octomap occupancy grid
-  * *safe_landing_planner* is a local planner to find safe area to land
+ROS node for safe drone landing site detection and waypoint generation.
 
-The three algorithms are standalone and they are not meant to be used together.
-
-The *local_planner* requires less computational power but it doesn't compute optimal paths towards the goal since it doesn't store information about the already explored environment. An in-depth discussion on how it works can be found in [this thesis](https://drive.google.com/open?id=1yjDtxRrIntr5Mdaj9CCB4IFJn0Iy2-bR). On the other hand, the *global_planner* is computationally more expensive since it builds a map of the environment. For the map to be good enough for navigation, accurate global position and heading are required. An in-depth discussion on how it works can be found in [this thesis](https://drive.google.com/open?id=1hhMLoXQuEM4ppdvDik8r6JY3RwGi5nzw).
 The *safe_landing_planner* classifies the terrain underneath the vehicle based on the mean and standard deviation of the z coordinate of pointcloud points. The pointcloud from a downwards facing sensor is binned into a 2D grid based on the xy point coordinates. For each bin, the mean and standard deviation of z coordinate of the points are calculated and they are used to locate flat areas where it is safe to land.
 
-> **Note** The development team is right now focused on the *local_planner*.
 
-The documentation contains information about how to setup and run the two planner systems on the Gazebo simulator and on a companion computer running Ubuntu 18.04 (recommended), for both avoidance and collision prevention use cases.
-
-> **Note** PX4-side setup is covered in the PX4 User Guide:
-  - [Obstacle Avoidance](https://docs.px4.io/en/computer_vision/obstacle_avoidance.html)
-  - [Collision Prevention](https://docs.px4.io/en/computer_vision/collision_prevention.html)
-
-[![PX4 Avoidance video](http://img.youtube.com/vi/VqZkAWSl_U0/0.jpg)](https://www.youtube.com/watch?v=VqZkAWSl_U0)
 
 # Table of Contents
 - [Getting Started](#getting-started)
@@ -48,100 +30,21 @@ The documentation contains information about how to setup and run the two planne
 
 ## Installation
 
-### Installation
+### Prerequisite
 
-This is a step-by-step guide to install and build all the prerequisites for running the avoidance module on **Ubuntu 18.04** with *ROS Melodic* (includes Gazebo 9).
-You might want to skip some steps if your system is already partially installed.
+1. Ubuntu 18.04 (Bionic Beaver) 
 
-> **Note:** These instructions assume your catkin workspace (in which we will build the avoidance module) is in `~/catkin_ws`, and the PX4 Firmware directory is `~/Firmware`.
-  Feel free to adapt this to your situation.
+1. ROS Melodic
 
-1. Add ROS to sources.list:
-     ```bash
-     sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
-     sudo apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
-     sudo apt update
-     ```
+1. MAVROS
 
-1. Install ROS with Gazebo:
-     ```bash
-     sudo apt install ros-melodic-desktop-full
 
-     # Source ROS
-     echo "source /opt/ros/melodic/setup.bash" >> ~/.bashrc
-     source ~/.bashrc
-     ```
-   > **Note** We recommend you use the version of Gazebo that comes with your (full) installation of ROS.
-   >  If you must to use another Gazebo version, remember to install associated ros-gazebo related packages:
-   >  - For Gazebo 8,
-       ```sh
-       sudo apt install ros-melodic-gazebo8-*
-       ```
-    > - For Gazebo 9,
-       ```
-       sudo apt install ros-melodic-gazebo9-*
-       ```
-
-1. Install and initialize rosdep.
-   ```bash
-   # for ros-melodic install:
-   sudo apt install python-rosdep
-   # for ros-noetic install: 
-   sudo apt install python3-rosdep
-
-   rosdep init
-   rosdep update
-   ```
-
-1. Install catkin and create your catkin workspace directory.
-
-   ```bash
-   sudo apt install python-catkin-tools
-   mkdir -p ~/catkin_ws/src
-   ```
-
-1. Install MAVROS (version 0.29.0 or above).
-   > **Note:** Instructions to install MAVROS from sources can be found [here](https://dev.px4.io/en/ros/mavros_installation.html).
-
-     ```bash
-     sudo apt install ros-melodic-mavros ros-melodic-mavros-extras
-     ```
-
-1. Install the *geographiclib* dataset
-
-   ```bash
-   wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh
-   chmod +x install_geographiclib_datasets.sh
-   sudo ./install_geographiclib_datasets.sh
-   ```
-
-1. Install avoidance module dependencies (pointcloud library and octomap).
-     ```bash
-     sudo apt install libpcl1 ros-melodic-octomap-*
-     ```
-
-1. Clone this repository in your catkin workspace in order to build the avoidance node.
+1. Clone and build this repository in your catkin workspace.
    ```bash
    cd ~/catkin_ws/src
-   git clone https://github.com/PX4/avoidance.git
-   ```
-
-1. Actually build the avoidance node.
-
-   ```bash
-   catkin build -w ~/catkin_ws
-   ```
-
-   Note that you can build the node in release mode this way:
-
-   ```bash
-   catkin build -w ~/catkin_ws --cmake-args -DCMAKE_BUILD_TYPE=Release
-   ```
-
-1. Source the catkin setup.bash from your catkin workspace:
-   ```bash   
-   echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
-   source ~/.bashrc
+   git clone https://github.com/AnujAgrawal7/avoidance.git
+   catkin build
+   source ~/catkin_ws/devel/setup.bash
    ```
 
 ## Run the Avoidance Gazebo Simulation
